@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+}
+
+model Costumer {
+  id         String  @id
+  externalId String
+  email      String  @unique
+  Order      Order[]
+
+  @@map("costumers")
+}
+
+model User {
+  id         String    @id
+  name       String
+  email      String    @unique
+  password   String
+  phone      String?
+  role       UserRole  @default(CUSTOMER)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  addresses  Address[]
+
+  @@map("users")
+}
+
+model Address {
+  id         String   @id
+  street     String
+  number     String
+  city       String
+  state      String
+  zip        String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    String
+
+  @@map("addresses")
+}
+
+model Theme {
+  id          String     @id
+  name        String
+  description String?
+  magazines   Magazine[]
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+
+  @@map("themes")
+}
+
+enum MagazinePublicationPeriod {
+  ANNUALLY
+  BIANNUAL
+  MONTHLY
+  BIMONTHLY
+  WEEKLY
+}
+
+model Magazine {
+  id                 String                    @id
+  name               String
+  description        String?
+  year_founded       Int
+  publication_period MagazinePublicationPeriod @default(MONTHLY)
+  theme              Theme                     @relation(fields: [theme_id], references: [id])
+  theme_id           String
+  created_at         DateTime                  @default(now())
+  updated_at         DateTime                  @updatedAt
+  editions           Edition[]
+
+  @@map("magazines")
+}
+
+model Product {
+  id          String   @id
+  name        String
+  description String?
+  price       Float
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("products")
+}
+
+model Edition {
+  id               String      @id
+  number           Int
+  title            String
+  cover_path       String
+  price            Float
+  year             Int
+  number_of_pages  Int
+  description      String?
+  publication_date DateTime
+  number_of_copies Int
+  magazine         Magazine    @relation(fields: [magazine_id], references: [id])
+  magazine_id      String
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+  Purchase         Purchase?   @relation(fields: [purchase_id], references: [id])
+  purchase_id      String?
+  OrderItem        OrderItem[]
+
+  @@map("editions")
+}
+
+model Purchase {
+  id              String    @id
+  payment_method  Int
+  total_value     Float
+  address_id      String
+  purchase_status Int
+  editions        Edition[]
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@map("purchases")
+}
+
+model OrderItem {
+  id         String   @id
+  quantity   Int
+  price      Float
+  edition    Edition  @relation(fields: [edition_id], references: [id])
+  edition_id String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  order      Order?   @relation(fields: [order_id], references: [id])
+  order_id   String?
+
+  @@map("orders_items")
+}
+
+model Order {
+  id             String      @id
+  customer       Costumer    @relation(fields: [customer_id], references: [id])
+  customer_id    String
+  payment_method Int
+  items          OrderItem[]
+  total_value    Float
+  address_id     String
+  status         Int
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+
+  @@map("orders")
+}
